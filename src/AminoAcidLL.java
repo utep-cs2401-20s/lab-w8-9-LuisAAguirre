@@ -1,5 +1,3 @@
-import javax.lang.model.element.AnnotationMirror;
-
 class AminoAcidLL{
   char aminoAcid;
   String[] codons;
@@ -54,7 +52,6 @@ class AminoAcidLL{
   /********************************************************************************************/
   /* Shortcut to find the total number of instances of this amino acid */
   private int totalCount(){
-    //add all the elements in count
     int sum = 0;
     for(int i = 0; i < counts.length; i++){
       sum += counts[i];
@@ -66,6 +63,7 @@ class AminoAcidLL{
   /* helper method for finding the list difference on two matching nodes
   *  must be matching, but this is not tracked */
   private int totalDiff(AminoAcidLL inList){
+    System.out.println(Math.abs(totalCount() - inList.totalCount()));
     return Math.abs(totalCount() - inList.totalCount());
   }
 
@@ -78,61 +76,102 @@ class AminoAcidLL{
     for(int i=0; i<codons.length; i++){
       diff += Math.abs(counts[i] - inList.counts[i]);
     }
+    System.out.println(diff);
     return diff;
   }
 
   /********************************************************************************************/
-  //TODO
-
   /* Recursive method that finds the differences in **Amino Acid** counts. 
    * the list *must* be sorted to use this method */
   public int aminoAcidCompare(AminoAcidLL inList){
-    /*
-    
-     */
-    return 0;
+    if(next == null && inList.next == null){
+      return totalDiff(inList);
+    }
+
+    if(next == null){
+      return totalDiff(inList) + new AminoAcidLL("").aminoAcidCompare(inList.next);
+    }
+
+    if(inList.next == null){
+      return totalDiff(inList) + next.aminoAcidCompare(new AminoAcidLL(""));
+    }
+
+    return totalDiff(inList) + next.aminoAcidCompare(inList.next);
   }
 
   /********************************************************************************************/
   //TODO
 
-  /* Same ad above, but counts the codon usage differences
+  /* Same as above, but counts the codon usage differences
    * Must be sorted. */
-  //check for empty, null, what to do if they have the same count, if they don't have the smae count which one is greater and how can you tell
+  //check for empty, null, what to do if they have the same count, if they don't have the same count which one is greater and how can you tell
   public int codonCompare(AminoAcidLL inList){
-    return 0;
+    if(codons.length > inList.codons.length){
+      int[] a = new int[counts.length];
+      for(int i = 0; i < inList.counts.length; i++){
+        a[i] = inList.counts[i];
+      }
+      inList.counts = a;
+    }
+    if(codons.length < inList.codons.length){
+      int[] b = new int[inList.counts.length];
+      for(int i = 0; i < counts.length; i++){
+        b[i] = counts[i];
+      }
+      counts = b;
+    }
+    if(next == null && inList.next == null){
+      return codonDiff(inList);
+    }
+
+    if(next == null){
+      return codonDiff(inList) + new AminoAcidLL("").codonCompare(inList.next);
+    }
+
+    if(inList.next == null){
+      return codonDiff(inList) + next.codonCompare(new AminoAcidLL(""));
+    }
+
+    return codonDiff(inList) + next.codonCompare(inList.next);
   }
 
 
   /********************************************************************************************/
-  //TODO
-
   /* Recursively returns the total list of amino acids in the order that they are in in the linked list. */
   public char[] aminoAcidList(){
-    /*
-    combination of loops and recursion
-
-     */
-    //translate from linked list into array of characters
     if(next == null){
-      return new char[aminoAcid];
+      return new char[]{aminoAcid};
     }
     char[] a = next.aminoAcidList();
-    System.out.println(a);
-    char [] b = new char[a.length + 1]; // add this node's amino acid
-//    for(int i = b.length; i < b.length; i++){
-//      a[i + 1] = b[i];
-//    }
+    char [] b = new char[a.length + 1];
+    for(int i = 0; i < b.length; i++){
+      if(i == 0){
+        b[i] = this.aminoAcid;
+      } else{
+        b[i] = a[i - 1];
+      }
+    }
 
-    return a;
+    return b;
   }
 
   /********************************************************************************************/
-  //TODO
-
   /* Recursively returns the total counts of amino acids in the order that they are in in the linked list. */
   public int[] aminoAcidCounts(){
-    return new int[]{};
+    if(next == null){
+      return new int[]{totalCount()};
+    }
+    int[] a = next.aminoAcidCounts();
+    int [] b = new int[a.length + 1];
+    for(int i = 0; i < b.length; i++){
+      if(i == 0){
+        b[i] = this.totalCount();
+      } else{
+        b[i] = a[i - 1];
+      }
+    }
+
+    return b;
   }
 
 
@@ -142,21 +181,24 @@ class AminoAcidLL{
     if(next == null) {
       return true;
     }
-    return (aminoAcid <= next.aminoAcid && next.isSorted());
+    return (aminoAcid < next.aminoAcid && next.isSorted());
   }
 
 
   /********************************************************************************************/
   /* Static method for generating a linked list from an RNA sequence */
   public static AminoAcidLL createFromRNASequence(String inSequence){
-    String codon = inSequence.substring(0, 3);
-    inSequence = inSequence.substring(codon.length());
-    AminoAcidLL head = new AminoAcidLL(codon);
+    AminoAcidLL head;
+    if(inSequence.length() < 3){
+      head = new AminoAcidLL(inSequence);
+    } else {
+      head = new AminoAcidLL(inSequence.substring(0, 3));
+      inSequence = inSequence.substring(3);
+    }
 
-    while(inSequence.length() != 0){
-      codon = inSequence.substring(0, 3);
-      inSequence = inSequence.substring(codon.length());
-      head.addCodon(codon);
+    while(inSequence.length() >= 3){
+      head.addCodon(inSequence.substring(0, 3));
+      inSequence = inSequence.substring(3);
     }
 
     return head;
